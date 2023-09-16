@@ -50,6 +50,11 @@ function main() {
     <textarea id='skillstext'></textarea>\
     <br/>\
     <div class='internal_button' id='skills_extract_button'>Extract Skills</div>\
+    <br/>\
+    <hr>\
+    <h2>Reactions</h3>\
+    <textarea id='reactionstext'></textarea>\
+    <div class='internal_button' id='reactions_extract_button'>Extract Reactions</div>\
     <div id='savepdf'>Save PDF</div>\
     </div>\
     \
@@ -84,39 +89,47 @@ function main() {
   document.getElementById('skills_extract_button').addEventListener("click", extractSkills);
   document.getElementById('experience_extract_button').addEventListener("click", extractExperience);
   document.getElementById('education_extract_button').addEventListener("click", extractEducation);
-
+  document.getElementById('reactions_extract_button').addEventListener("click", reactionsExtract);
   document.getElementById('save_profile_data_button').addEventListener("click", saveProfileData);
 
 } //MAIN FUNCTION ENDS HERE //
 
 function saveProfileData() {
-  var textBoxIds = ['basicprofile', 'educationtext', 'experiencetext', 'skillstext', 'certificationstext'];
+  // An array of IDs for input fields
+  var textBoxIds = ['basicprofile', 'educationtext', 'experiencetext', 'skillstext', 'certificationstext','reactionstext'];
   var profileData = {};
 
+  // Iterate through the input fields
   for (var i = 0; i < textBoxIds.length; i++) {
+    // Extract the key from the ID
     var tempid = textBoxIds[i].replace("text", "");
     var element = document.getElementById(textBoxIds[i]);
+
+    // Parse the JSON value or set a default if it's empty
     profileData[tempid] = element.value ? JSON.parse(element.value) : "No data";
   }
-
-  // Sending data to the FastAPI endpoint
-  fetch('http://localhost:8000/store_profile_data/', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(profileData),
-  })
-  .then(response => response.json())
-  .then(data => {
-    console.log(data);  // Handle the response from FastAPI if needed
-    alert('Profile data saved successfully in MongoDB!');
-  })
-  .catch(error => {
-    console.error('Error:', error);
-    alert('Error occurred while saving profile data.');
-  });
+  console.log(profileData)
+  // Send a POST request to your DRF API
+  // fetch('http://127.0.0.1:8000/user-profile/', {
+  //   method: 'POST',
+  //   headers: {
+  //     'Content-Type': 'application/json',
+  //   },
+  //   body: JSON.stringify(profileData),
+  // })
+  //   .then(response => {
+  //     if (response.ok) {
+  //       alert('Profile data saved successfully');
+  //       // Optionally, you can redirect or perform other actions here
+  //     } else {
+  //       alert('Failed to save profile data');
+  //     }
+  //   })
+  //   .catch(error => {
+  //     console.error('Error:', error);
+  //   });
 }
+
 
 function printName() {
   var uname = document?.querySelector('div.pv-text-details__left-panel > div > h1') || document?.getElementsByClassName('artdeco-entity-lockup__title ember-view')[0] || null;
@@ -347,6 +360,7 @@ function extractSkills() {
 
 
 
+
 // Extract Experience /////
 
 function extractExperience() {
@@ -474,6 +488,56 @@ function extractExperience() {
 
 
 // Extract Experience //
+
+function reactionsExtract() {
+  var anchor1 = document.querySelector(".update-components-text.relative.feed-shared-update-v2__commentary");
+  var reactionContent = ""; // Initialize an empty string to store the content
+
+  if (anchor1) {
+    anchor1 = anchor1.nextElementSibling;
+
+    if (anchor1) {
+      anchor1 = anchor1.nextElementSibling;
+      var contentDivs = anchor1.querySelectorAll('div');
+
+      for (var i = 0; i < contentDivs.length; i++) {
+        var elem = null;
+        var firstdiv = null;
+
+        if (anchor1 && !document.getElementById('deepscan').checked) {
+          elem = contentDivs[i].querySelectorAll('div');
+
+          if (elem[0].querySelector('span')) {
+            firstdiv = elem[0].querySelector('span').children;
+          } else {
+            firstdiv = elem[1].children;
+          }
+        } else if ((anchor1 == null) && document.getElementById('deepscan').checked && location.href.includes('ember764')) {
+          elem = contentDivs[i].querySelector('span > span').firstElementChild.nextElementSibling;
+          firstdiv = elem.firstElementChild.firstElementChild.children;
+        } else {
+          break;
+        }
+
+        var post_content = getCleanText(firstdiv[0].querySelector('span > span')?.textContent || "");
+
+        // Append the post content to the reactionContent string
+        reactionContent += post_content + "\n";
+      }
+    }
+  }
+
+  var reactionData = {
+    'name': 'reaction',
+    'data': {
+      'content': reactionContent.trim(), // Trim any leading/trailing whitespace
+    },
+  };
+
+  document.getElementById('reactionstext').value = JSON.stringify(reactionData);
+}
+
+// Other functions remain unchanged
 
 function extractEducation(){
   //defining anchors (roots from where scraping starts)
